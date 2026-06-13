@@ -150,11 +150,16 @@
     border: 1px solid oklch(1 0 0 / 0.08);
   }
   .glass-hover {
-    transition: background 300ms ease, transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 300ms ease;
+    transition:
+      background 300ms ease,
+      transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 300ms ease;
   }
   .glass-hover:hover {
     background: oklch(0.3 0.006 270 / 0.45);
-    box-shadow: 0 10px 30px -12px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(1 0 0 / 0.1);
+    box-shadow:
+      0 10px 30px -12px oklch(0 0 0 / 0.6),
+      0 0 0 1px oklch(1 0 0 / 0.1);
   }
   .ambient-bg {
     background: var(--gradient-ambient), oklch(0.16 0.005 270);
