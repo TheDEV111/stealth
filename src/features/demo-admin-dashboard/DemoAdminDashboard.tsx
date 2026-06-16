@@ -2,12 +2,14 @@ import { useState, type ReactNode } from "react";
 import {
   Activity,
   BarChart3,
+  Key,
   LayoutDashboard,
   Mail,
   Shield,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OTP_FIXTURES } from "./fixtures/otpFixtures";
 import type {
   DashboardNavItem,
   DashboardSection,
@@ -22,6 +24,7 @@ const NAV_ITEMS: DashboardNavItem[] = [
   { id: "accounts", label: "Accounts", description: "Demo Stellar accounts and balances" },
   { id: "mail", label: "Mail", description: "Demo mail fixtures and delivery states" },
   { id: "audit", label: "Audit", description: "Demo protocol event log" },
+  { id: "otp", label: "OTP & Passkeys", description: "Demo OTP and passkey presets" },
 ];
 
 const OVERVIEW_STATS: StatCard[] = [
@@ -59,6 +62,7 @@ const SECTION_ICON: Record<DashboardSection, React.ElementType> = {
   accounts: Users,
   mail: Mail,
   audit: Activity,
+  otp: Key,
 };
 
 // ─── Content region components ────────────────────────────────────────────────
@@ -193,11 +197,59 @@ function AuditContent() {
   );
 }
 
+function OTPContent() {
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-muted-foreground">
+        Demo OTP and passkey sign-in message presets.
+      </p>
+      <div className="overflow-hidden rounded-xl border border-white/[0.06]">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+              <th className="px-4 py-3 font-medium text-muted-foreground">Sender Label</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">Type</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">Safe Code</th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {OTP_FIXTURES.map((otp) => (
+              <tr key={otp.id} className="border-b border-white/[0.04] last:border-0">
+                <td className="px-4 py-3">
+                  <p className="font-medium text-foreground">{otp.senderLabel}</p>
+                  <p className="text-xs text-muted-foreground">{otp.senderDomain}</p>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground capitalize">{otp.type}</td>
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{otp.safeCode}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                      otp.status === "delivered" && "bg-emerald-500/10 text-emerald-400",
+                      otp.status === "pending" && "bg-amber-500/10 text-amber-400",
+                      otp.status === "failed" && "bg-rose-500/10 text-rose-400",
+                    )}
+                  >
+                    {otp.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
 const SECTION_CONTENT: Record<DashboardSection, () => ReactNode> = {
   overview: OverviewContent,
   accounts: AccountsContent,
   mail: MailContent,
   audit: AuditContent,
+  otp: OTPContent,
 };
 
 // ─── Dashboard Shell ──────────────────────────────────────────────────────────
