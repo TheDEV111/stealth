@@ -30,6 +30,22 @@ export type MailLocation = Exclude<MailFolder, VirtualMailFolder>;
  */
 export type SenderPolicy = "allow" | "verify" | "block";
 
+/**
+ * Reminder metadata attached when a message is snoozed. Persisted on the email
+ * so the snoozed folder can show when it returns and offer edit/undo.
+ * See src/features/snooze.
+ */
+export type SnoozeState = {
+  /** ISO datetime the message should return to the inbox. */
+  remindAt: string;
+  /** Which option produced this reminder. */
+  choice: "later-today" | "tomorrow" | "next-week" | "custom";
+  /** Human label captured at set-time, e.g. "Tomorrow". */
+  label: string;
+  /** ISO datetime the snooze was created. */
+  createdAt: string;
+};
+
 export type Email = {
   id: string;
   from: string;
@@ -46,6 +62,7 @@ export type Email = {
   avatarColor: string;
   event?: MailEvent;
   senderPolicy?: SenderPolicy;
+  snooze?: SnoozeState;
 };
 
 export type MailFilters = {
@@ -115,6 +132,22 @@ const inboxLocations = new Set<MailLocation>([
 
 export function getFolderLabel(folder: MailFolder) {
   return mailFolders.find((item) => item.key === folder)?.label ?? folder;
+}
+
+/** Folders whose messages carry a verified Stellar identity proof. */
+const verifiedLocations = new Set<MailLocation>(["verified", "priority", "encrypted", "receipts"]);
+
+/** Whether a message's sender identity is considered verified. */
+export function isVerified(email: Email) {
+  return verifiedLocations.has(email.folder);
+}
+
+/**
+ * Deterministic mock proof hash for a message. Shared by the reader's protocol
+ * badge and the command palette so "inspect proof" and the badge agree.
+ */
+export function deriveProof(email: Email) {
+  return `${email.id.padStart(2, "0")}c7...${email.from.length.toString(16)}a9`;
 }
 
 export function getEmailsForFolder(allEmails: Email[], folder: MailFolder) {
@@ -271,6 +304,12 @@ export const emails: Email[] = [
     folder: "snoozed",
     labels: ["Event", "Snoozed", "Personal"],
     avatarColor: c(2),
+    snooze: {
+      remindAt: "2026-06-14T10:30:00",
+      choice: "tomorrow",
+      label: "Tomorrow",
+      createdAt: "2026-06-13T09:41:00",
+    },
     event: {
       id: "mail-studio-visit",
       title: "Studio visit",

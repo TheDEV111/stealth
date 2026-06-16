@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { format, isSameDay, parseISO } from "date-fns";
-import type { CalendarDefinition, CalendarEvent } from "@/features/calendar";
+import { getAppToday, type CalendarDefinition, type CalendarEvent } from "@/features/calendar";
 import { ConvertSenderButton, SenderBadge } from "@/features/sender-conversion";
 import type { Email } from "./data";
 
@@ -23,6 +23,7 @@ export function RightPanel({
   onAction,
   onDraftReply,
   onConvertSender,
+  onSnooze,
   calendarEvents,
   calendars,
   onOpenCalendar,
@@ -32,6 +33,7 @@ export function RightPanel({
   onAction: (action: ContextAction, email: Email) => void;
   onDraftReply: (email: Email, prompt: string) => void;
   onConvertSender: (email: Email) => void;
+  onSnooze: (email: Email) => void;
   calendarEvents: CalendarEvent[];
   calendars: CalendarDefinition[];
   onOpenCalendar: (eventId?: string) => void;
@@ -42,6 +44,11 @@ export function RightPanel({
 
   const runAction = (action: ContextAction) => {
     if (!email) return;
+    if (action === "snooze") {
+      // Snooze opens the guided dialog instead of an instant folder move.
+      onSnooze(email);
+      return;
+    }
     if (action === "summarize") {
       setSummary(
         `${email.from} is writing about ${email.subject.toLowerCase()}. The next step is to respond or review the attached context.`,
@@ -116,7 +123,7 @@ export function RightPanel({
         </div>
         <ul className="mt-3 space-y-2">
           {calendarEvents
-            .filter((event) => isSameDay(parseISO(event.date), new Date(2026, 5, 13)))
+            .filter((event) => isSameDay(parseISO(event.date), getAppToday()))
             .slice(0, 4)
             .map((event) => {
               const calendar = calendars.find((item) => item.id === event.calendarId);
@@ -146,7 +153,7 @@ export function RightPanel({
           onClick={() => onOpenCalendar()}
           className="mt-3 flex w-full items-center justify-between rounded-lg border border-white/8 bg-white/[0.025] px-3 py-2 text-[10px] text-muted-foreground transition hover:bg-white/[0.06] hover:text-foreground"
         >
-          <span>{format(new Date(2026, 5, 13), "MMMM d")} schedule</span>
+          <span>{format(getAppToday(), "MMMM d")} schedule</span>
           <span>Open calendar</span>
         </button>
       </Card>

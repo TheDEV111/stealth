@@ -9,6 +9,8 @@ export interface ApiRepository {
   setPostage(postage: Postage): Promise<Postage>;
   getReceipt(messageId: string): Promise<Receipt | null>;
   setReceipt(receipt: Receipt): Promise<Receipt>;
+  getCounter(key: string): Promise<number>;
+  incrementCounter(key: string, windowSeconds: number): Promise<number>;
 }
 
 export const defaultMailboxPolicy: MailboxPolicy = {

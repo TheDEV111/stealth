@@ -51,18 +51,10 @@ function renderStep(step: OnboardingStep, props: StepProps): React.ReactNode {
   switch (step) {
     case "identity":
       return (
-        <IdentityStep
-          freighter={props.freighter}
-          onAdvance={(patch) => props.onAdvance(patch)}
-        />
+        <IdentityStep freighter={props.freighter} onAdvance={(patch) => props.onAdvance(patch)} />
       );
     case "recovery":
-      return (
-        <RecoveryStep
-          onAdvance={props.onAdvance}
-          onRetreat={props.onRetreat}
-        />
-      );
+      return <RecoveryStep onAdvance={props.onAdvance} onRetreat={props.onRetreat} />;
     case "address":
       return (
         <AddressStep
@@ -174,10 +166,7 @@ export function OnboardingModal({ open, onComplete }: Props) {
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
             className="glass-strong fixed left-1/2 top-1/2 z-50 w-[min(480px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl"
           >
-            <ProgressBar
-              stepIndex={onboarding.stepIndex}
-              totalSteps={onboarding.totalSteps}
-            />
+            <ProgressBar stepIndex={onboarding.stepIndex} totalSteps={onboarding.totalSteps} />
 
             {/* Step content area with direction-aware slide transition */}
             <div className="overflow-hidden px-6 pb-6 pt-4">

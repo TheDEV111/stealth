@@ -14,6 +14,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Upload,
   User,
   type LucideIcon,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import type { MailFilters } from "./data";
 type TopbarProps = {
   onOpenPalette: () => void;
   onOpenSettings: () => void;
+  onImportContacts: () => void;
   onShowToast: (message: string) => void;
   filters: MailFilters;
   onFiltersChange: (filters: MailFilters) => void;
@@ -45,6 +47,7 @@ const quickActions: {
 export function Topbar({
   onOpenPalette,
   onOpenSettings,
+  onImportContacts,
   onShowToast,
   filters,
   onFiltersChange,
@@ -262,6 +265,11 @@ export function Topbar({
           onViewAll={onViewNotifications}
         />
 
+        {/* Import contacts */}
+        <IconBtn label="Import contacts" onClick={onImportContacts}>
+          <Upload className="h-4 w-4" />
+        </IconBtn>
+
         {/* Settings */}
         <IconBtn label="Settings" onClick={onOpenSettings}>
           <Settings className="h-4 w-4" />
@@ -447,7 +455,7 @@ function FilterToggle({
   checked,
   onChange,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   checked: boolean;
   onChange: (v: boolean) => void;
@@ -474,7 +482,7 @@ function AccountMenuItem({
   label,
   onClick,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   onClick: () => void;
 }) {

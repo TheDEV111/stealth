@@ -25,4 +25,11 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  {
+    files: ["tests/**/*.{ts,tsx}"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/exhaustive-deps": "off",
+    },
+  },
 );

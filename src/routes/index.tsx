@@ -7,10 +7,10 @@ import { EmailList } from "@/components/mail/EmailList";
 import { EmailView } from "@/components/mail/EmailView";
 import { Compose, type ComposeSubmission } from "@/components/mail/Compose";
 import { RightPanel, type ContextAction } from "@/components/mail/RightPanel";
-import { CommandPalette } from "@/components/mail/CommandPalette";
 import { SettingsModal } from "@/components/mail/SettingsModal";
 import {
   defaultMailFilters,
+  deriveProof,
   emails as initialEmails,
   getEmailsForFolder,
   mailFolders,
@@ -23,6 +23,7 @@ import { CalendarWorkspace, useCalendar } from "@/features/calendar";
 import { FeedbackViewport } from "@/features/design-system/feedback/feedback-viewport";
 import { useFeedback } from "@/features/design-system/feedback/use-feedback";
 import { OnboardingModal, draftToMailboxPolicy, type OnboardingDraft } from "@/features/onboarding";
+import { ImportWizard, type ImportedContact } from "@/features/contacts";
 import {
   SenderConversionDialog,
   resolveSenderConversion,
@@ -30,6 +31,15 @@ import {
   type SenderConversionTarget,
   type SenderPolicyChoice,
 } from "@/features/sender-conversion";
+import {
+  SnoozeDialog,
+  formatSnoozeSummary,
+  snoozePatch,
+  unsnoozePatch,
+  useSnooze,
+  type SnoozeTarget,
+} from "@/features/snooze";
+import type { SnoozeState } from "@/components/mail/data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,6 +69,7 @@ function MailApp() {
   }>({});
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [customFolder, setCustomFolder] = useState<string | null>(null);
   const [filters, setFilters] = useState<MailFilters>(defaultMailFilters);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -66,6 +77,7 @@ function MailApp() {
   const [calendarCreateRequest, setCalendarCreateRequest] = useState(0);
   const { preferences, setPreferences, hydrated } = usePreferences();
   const senderConversion = useSenderConversion();
+  const snooze = useSnooze();
 
   // Gate: show onboarding only after localStorage has been read (hydrated) and only
   // when it has not been completed in a previous session.
@@ -111,6 +123,14 @@ function MailApp() {
   const calendar = useCalendar();
   const { dismiss: dismissFeedback, items: feedbackItems, notify: showToast } = useFeedback();
 
+  const handleImportSave = useCallback(
+    (contacts: ImportedContact[]) => {
+      setImportOpen(false);
+      showToast(`${contacts.length} contact${contacts.length !== 1 ? "s" : ""} imported`);
+    },
+    [showToast],
+  );
+
   const folderCounts = useMemo(
     () =>
       Object.fromEntries(
@@ -148,6 +168,20 @@ function MailApp() {
     const result = resolveSenderConversion(email, choice);
     updateEmail(email.id, result.patch);
     showToast(result.toast.message, { tone: result.toast.tone });
+  };
+
+  // Snooze opens the guided dialog; nothing changes until the user confirms.
+  const openSnooze = (e: Email) => snooze.open({ emailId: e.id, subject: e.subject });
+
+  const handleSnooze = (target: SnoozeTarget, state: SnoozeState) => {
+    updateEmail(target.emailId, snoozePatch(state));
+    snooze.close();
+    showToast(formatSnoozeSummary(state), { tone: "success" });
+  };
+
+  const handleUnsnooze = (e: Email) => {
+    updateEmail(e.id, unsnoozePatch());
+    showToast(`"${e.subject}" returned to your inbox`);
   };
 
   const quoteBody = (e: Email) =>
@@ -195,6 +229,8 @@ function MailApp() {
       showToast(e.starred ? "Removed star" : "Starred");
     },
     onConvertSender: openSenderConversion,
+    onSnooze: openSnooze,
+    onUnsnooze: handleUnsnooze,
     onShowToast: showToast,
     onAddEvent: (e: Email) => {
       if (!e.event) return;
@@ -213,11 +249,7 @@ function MailApp() {
   };
 
   const handleContextAction = (action: ContextAction, email: Email) => {
-    if (action === "snooze") {
-      updateEmail(email.id, { folder: "snoozed", time: "Tomorrow" });
-      showToast(`Snoozed "${email.subject}" until tomorrow`);
-      return;
-    }
+    // Snooze is handled by the guided dialog via onSnooze, not here.
     if (action === "schedule") {
       openCompose({
         to: email.email,
@@ -322,6 +354,7 @@ function MailApp() {
           <Topbar
             onOpenPalette={() => setPaletteOpen(true)}
             onOpenSettings={() => setSettingsOpen(true)}
+            onImportContacts={() => setImportOpen(true)}
             onShowToast={showToast}
             filters={filters}
             onFiltersChange={setFilters}
@@ -357,6 +390,7 @@ function MailApp() {
               email={selected}
               onAction={handleContextAction}
               onConvertSender={openSenderConversion}
+              onSnooze={openSnooze}
               calendarEvents={calendar.visibleEvents}
               calendars={calendar.calendars}
               onOpenCalendar={(eventId) => {
@@ -402,24 +436,20 @@ function MailApp() {
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
-        onCompose={() => openCompose()}
+        context={{ email: selected, folder }}
+        emails={emails}
+        onRunCommand={runCommand}
         onNavigate={(f) => {
           setFolder(f);
           setCustomFolder(null);
         }}
-        onArchive={() => {
-          if (selected) {
-            emailActions.onArchive(selected);
-          }
-        }}
-        onOpenSettings={() => setSettingsOpen(true)}
-        emails={emails}
         onSelectEmail={(email) => {
           setCustomFolder(null);
           setFilters(defaultMailFilters);
           setFolder(email.folder);
           setSelectedId(email.id);
         }}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
       <CalendarWorkspace
         open={calendarOpen}
@@ -440,12 +470,30 @@ function MailApp() {
 
       <FeedbackViewport items={feedbackItems} onDismiss={dismissFeedback} />
 
+      <ImportWizard
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSave={handleImportSave}
+      />
+
       <OnboardingModal open={showOnboarding} onComplete={handleOnboardingComplete} />
 
       <SenderConversionDialog
         target={senderConversion.target}
         onConfirm={handleConvertSender}
         onClose={senderConversion.close}
+      />
+
+      <SnoozeDialog
+        target={snooze.target}
+        initialState={
+          snooze.target
+            ? emails.find((item) => item.id === snooze.target?.emailId)?.snooze
+            : undefined
+        }
+        events={calendar.events}
+        onConfirm={handleSnooze}
+        onClose={snooze.close}
       />
     </div>
   );
