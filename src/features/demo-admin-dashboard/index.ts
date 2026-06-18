@@ -111,3 +111,18 @@ export {
 } from "./persistence/localStorageAdapter";
 
 export { messagePool, defaultAssignmentState } from "./fixtures/assignmentFixtures";
+
+// Draft dataset admin store (issue #172): reducer, selectors, hook, types, fixture.
+export { draftDatasetReducer, initialDraftDatasetState } from "./reducers/draftDatasetReducer";
+export {
+  selectAllDrafts,
+  selectDraftById,
+  selectDraftCount,
+  selectFilteredDrafts,
+  selectIsEmpty,
+  selectSelectedDraft,
+} from "./selectors/draftDatasetSelectors";
+export { useDraftDataset } from "./hooks/useDraftDataset";
+export type { UseDraftDatasetResult } from "./hooks/useDraftDataset";
+export type { DraftDatasetAction, DraftDatasetState } from "./types/draftDataset";
+export { draftDatasetSample } from "./fixtures/draftDatasetFixtures";
