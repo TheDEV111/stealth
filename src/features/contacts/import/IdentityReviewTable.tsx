@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -51,7 +51,8 @@ export function IdentityReviewTable({ rows, onChange }: Props) {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
 
-  const { exact, fuzzy, ambiguous, none } = useMemo(() => classifyMatches(rows), [rows]);
+  const classified = useMemo(() => classifyMatches(rows), [rows]);
+  const { exact, fuzzy, ambiguous, none } = classified;
 
   const filtered = useMemo(() => {
     let result = rows;
@@ -69,9 +70,9 @@ export function IdentityReviewTable({ rows, onChange }: Props) {
     return result;
   }, [rows, exact, fuzzy, ambiguous, none, filter, search]);
 
-  function updateRow(id: string, patch: Partial<ImportedContactRow>) {
-    onChange(
-      rows.map((r) => {
+  const updateRow = useCallback((id: string, patch: Partial<ImportedContactRow>) => {
+    onChange((prev) =>
+      prev.map((r) => {
         if (r.id !== id) return r;
         const updated = { ...r, ...patch };
         if ("address" in patch) {
@@ -80,11 +81,11 @@ export function IdentityReviewTable({ rows, onChange }: Props) {
         return updated;
       }),
     );
-  }
+  }, [onChange]);
 
-  function removeRow(id: string) {
-    onChange(rows.filter((r) => r.id !== id));
-  }
+  const removeRow = useCallback((id: string) => {
+    onChange((prev) => prev.filter((r) => r.id !== id));
+  }, [onChange]);
 
   const ambiguousCount = ambiguous.length;
   const hasAmbiguous = ambiguousCount > 0;
