@@ -55,7 +55,9 @@ export function ThreadList({
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-xs bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-700 focus:ring-1 focus:ring-zinc-600"
           />
-          <span className="absolute left-3 top-2.5 text-zinc-500" aria-hidden="true">🔍</span>
+          <span className="absolute left-3 top-2.5 text-zinc-500" aria-hidden="true">
+            🔍
+          </span>
           {search && (
             <button
               onClick={() => setSearch("")}
@@ -68,9 +70,9 @@ export function ThreadList({
         </div>
 
         {/* Tab Filters */}
-        <div 
-          className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800" 
-          role="tablist" 
+        <div
+          className="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800"
+          role="tablist"
           aria-label="Filter threads by status"
         >
           {(["all", "unassigned", "assigned", "resolved"] as const).map((t) => (
@@ -81,9 +83,7 @@ export function ThreadList({
               aria-controls="threads-panel"
               onClick={() => setFilter(t)}
               className={`px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-sky-500/50 ${
-                filter === t
-                  ? "bg-zinc-800 text-sky-400 shadow-sm"
-                  : "text-zinc-400 hover:text-zinc-200"
+                filter === t ? "bg-zinc-800 text-sky-400 shadow-sm" : "text-zinc-400 hover:text-zinc-200"
               }`}
             >
               {t}
@@ -95,8 +95,14 @@ export function ThreadList({
       {/* Threads list container */}
       <div id="threads-panel" className="space-y-3" role="list" aria-label="Support threads">
         {filteredThreads.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/5" role="status" aria-live="polite">
-            <span className="text-2xl block mb-2" aria-hidden="true">📥</span>
+          <div
+            className="text-center py-12 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/5"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="text-2xl block mb-2" aria-hidden="true">
+              📥
+            </span>
             <p className="text-xs text-zinc-400 font-medium">
               {threads.length === 0 ? "No active threads in the queue." : "No matching threads found."}
             </p>
@@ -224,7 +230,7 @@ export function ThreadList({
                           + Assign Agent
                         </button>
                         {assigningThreadId === thread.id && (
-                          <div 
+                          <div
                             className="absolute right-0 bottom-full mb-2 w-48 max-h-56 overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-lg shadow-2xl z-20 p-1 space-y-0.5"
                             role="listbox"
                             aria-label="Available agents"
