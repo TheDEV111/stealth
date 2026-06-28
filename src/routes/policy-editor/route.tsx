@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Surface, ActionButton, useFeedback } from "@/features/design-system";
 import { Check, X, Shield, ShieldAlert, Code } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { simulateSenderAdmission } from "./simulate-sender";
+import { simulateSenderAdmission } from "./-simulate-sender";
 
 export const Route = createFileRoute("/policy-editor")({
   component: PolicyEditorPage,
