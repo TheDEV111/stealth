@@ -34,7 +34,12 @@ import { createWatchlistService, createWatchlistContract } from ".";
 const contract = createWatchlistContract(createWatchlistService());
 const res = await contract.execute({
   operation: "add",
-  input: { senderEmail: "spoof@bank.example", senderName: "Bank", reason: "phish", riskLevel: "high" },
+  input: {
+    senderEmail: "spoof@bank.example",
+    senderName: "Bank",
+    reason: "phish",
+    riskLevel: "high",
+  },
 });
 if (res.ok) {
   // res.value.entry is the newly created WatchlistEntry
