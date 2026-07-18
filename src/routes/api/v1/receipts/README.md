@@ -34,6 +34,88 @@ The contract intentionally excludes message bodies, attachments, mailbox snapsho
 - Forbidden receipt: non-participants receive a forbidden error rather than receipt metadata.
 - Provenance UI: `ProvenancePanel` shows receipt status, copyable identifiers, timeline state, and inspection details without exposing raw message content.
 
+## Authorization
+
+Receipt access is scoped to the two participants of a message: its `sender` and its `recipient`. Every request must identify its actor with the `x-stealth-address` header, and a missing or invalid header returns `401 unauthorized` before any receipt is read or written. Beyond that, the two endpoints enforce different actor rules.
+
+### Actor rules by endpoint
+
+**`POST /api/v1/receipts/`** — create a delivery receipt.
+
+- The actor must equal the `sender` in the request body, enforced by `requireActorMatches(request, input.sender)`. Only a sender can record delivery for their own address.
+- An actor that does not match `sender` returns `403 forbidden`, so a recipient or third party cannot mint a sender-owned receipt.
+- A missing or invalid actor header returns `401 unauthorized`.
+- A duplicate receipt for a `messageId` that already exists returns `409 conflict`.
+
+**`GET /api/v1/receipts/:messageId`** — read a receipt.
+
+- The actor must be the receipt's `sender` or `recipient`, enforced by `assertReceiptParticipant(receipt, actor)`. Any other actor returns `403 forbidden` instead of receipt metadata.
+- The participant check runs after the receipt is loaded, so an unknown `messageId` returns `404 not_found`.
+- A missing or invalid actor header returns `401 unauthorized`.
+
+Read-state transitions (`readAt`) are handled by the `markReceiptRead` service helper, which rejects a second mark with `409 conflict` and echoes the existing timestamp in `details.readAt`. This transition is not exposed as a public route in this module today; when one is added, document its actor rules here.
+
+### Authorization failures
+
+All failures use the standard error envelope from `src/server/api/response.ts`, so callers can branch on `error.code`.
+
+| Scenario                                                      | HTTP status | `error.code`       |
+| ------------------------------------------------------------- | ----------- | ------------------ |
+| Missing or invalid `x-stealth-address` header                 | 401         | `unauthorized`     |
+| Creating a receipt where the actor is not the `sender`        | 403         | `forbidden`        |
+| Reading a receipt as a non-participant                        | 403         | `forbidden`        |
+| Reading a receipt that does not exist                         | 404         | `not_found`        |
+| Creating a duplicate receipt for the same `messageId`         | 409         | `conflict`         |
+| `messageId`, `sender`, or `recipient` fails schema validation | 422         | `validation_error` |
+
+Non-participant read (`403 forbidden`):
+
+    {
+      "error": {
+        "code": "forbidden",
+        "message": "Only message participants can read this receipt"
+      },
+      "meta": { "requestId": "7b2e...", "timestamp": "2026-07-17T23:00:00.000Z" }
+    }
+
+Duplicate create (`409 conflict`):
+
+    {
+      "error": {
+        "code": "conflict",
+        "message": "A delivery receipt already exists for this message"
+      },
+      "meta": { "requestId": "3f9a...", "timestamp": "2026-07-17T23:00:00.000Z" }
+    }
+
+### Receipt examples
+
+A freshly created delivery receipt has `deliveredAt` set and `readAt` still `null`:
+
+    {
+      "data": {
+        "messageId": "3b1f0c9d5e2a4b8c7d6e1f0a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c",
+        "sender": "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+        "recipient": "GDRXE2BQUC3AZNPVFSCEZ76NJ3WWL25FYFK6RGZGIEKWE4SOOHSUJUJ6",
+        "deliveredAt": "2026-07-17T23:00:00.000Z",
+        "readAt": null
+      },
+      "meta": { "requestId": "9c4d...", "timestamp": "2026-07-17T23:00:00.000Z" }
+    }
+
+After the message is marked read, the same record carries a `readAt` timestamp:
+
+    {
+      "data": {
+        "messageId": "3b1f0c9d5e2a4b8c7d6e1f0a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c",
+        "sender": "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+        "recipient": "GDRXE2BQUC3AZNPVFSCEZ76NJ3WWL25FYFK6RGZGIEKWE4SOOHSUJUJ6",
+        "deliveredAt": "2026-07-17T23:00:00.000Z",
+        "readAt": "2026-07-17T23:15:00.000Z"
+      },
+      "meta": { "requestId": "e1a7...", "timestamp": "2026-07-17T23:15:00.000Z" }
+    }
+
 ## Safety And Privacy Notes
 
 - `requireActorMatches(request, input.sender)` protects receipt creation so callers cannot create sender-owned receipts for another account.
